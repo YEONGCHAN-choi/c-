@@ -1,0 +1,322 @@
+
+#define numRow 6/* power of 2 (2, 4, 8, 16, ...)가 아닌 값으로 설정 */
+#define numCol 11
+int matrix[numRow][numCol] = {
+   { 1,1,1,2,2,2,2,2,2,2,2 },
+{ 2,2,2,2,2,2,2,2,2,2,2 },
+{ 1,1,1,1,1,2,2,2,2,2,2 },
+{ 3,3,3,3,3,3,1,4,4,1,2 },
+{ 1,1,1,1,2,2,3,3,4,4,2 },
+{ 1,1,1,1,2,2,3,10,4,4,2 }
+};
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <math.h>
+#define max(a, b) (a) > (b) ? (a) : (b)
+
+
+typedef struct bstNode* bstPointer;
+typedef struct bstNode
+{
+	int data;
+	int count;
+	bstPointer left;
+	bstPointer right;
+}bstNode;
+
+bstPointer newNode(int n)
+{
+	bstPointer temp;
+
+	temp = (bstPointer)malloc(sizeof(bstNode));
+	temp->count = 1;
+	temp->data = n;
+	temp->right = temp->left = NULL;
+
+	return temp;
+}
+bstPointer newNullNode()
+{
+	bstPointer temp;
+	temp = (bstPointer)malloc(sizeof(bstNode));
+	temp->data = 0;
+	temp->count = 0;
+	temp->right = temp->left = NULL;
+	return temp;
+}
+void flushAll(bstPointer* dummy, int k)
+{
+	int i;
+	for (i = 0; i < k; i++)
+	{
+		dummy[i] = newNullNode();
+	}
+}
+
+void printPointer(bstPointer src)
+{
+	if (!src) return;
+	else printf("%d %d\n", src->data, src->count);
+}
+void printPointerIndex(int index, bstPointer src)
+{
+	if (!src) return;
+	else printf("(%d %d %d)\n", index, src->data, src->count);
+}
+
+bstPointer insert(bstPointer target, int n)
+{
+	if (target == NULL) {
+		target = newNode(n);
+
+	}
+
+	else if (n < target->data)
+		target->left = insert(target->left, n);
+	else if (n == target->data)
+	{
+		target->count++;
+	}
+	else
+		target->right = insert(target->right, n);
+
+	return target;
+}
+
+int compare(bstPointer a, bstPointer b)
+{
+	if (!a) return -1;
+	if (!b) return 1;
+
+	if (a->count < b->count) return -1;
+
+	else if (a->count == b->count)
+	{
+		if (a->data < b->data) return -1;
+		else if (a->data == b->data) return 0;
+		else return 1;
+	}
+	else return 1;
+}
+bstPointer max3(bstPointer a, bstPointer b, bstPointer c)
+{
+
+	if (compare(a, b) > 0)
+	{
+		if (compare(a, c) > 0) return a;
+		else return c;
+	}
+	else
+	{
+		if (compare(b, c) > 0) return b;
+		else return c;
+	}
+}
+
+bstPointer maxCount(bstPointer root)
+{
+	if (!root || root->count == 0)
+	{
+		return root;
+	}
+	if (root == NULL)
+	{
+		return root;
+	}
+	if (!(root->right) && !(root->left))
+	{
+		return root;
+	}
+	else
+	{
+		return max3(maxCount(root->left), root, maxCount(root->right));
+	}
+}
+
+
+bstPointer minPointer(bstPointer src)
+{
+	while (src->left != NULL)
+		src = src->left;
+
+	return src;
+}
+bstPointer Delete(bstPointer root, int data)
+{
+	if (root == NULL)
+		return root;
+
+	if (data < root->data) 
+		root->left = Delete(root->left, data);
+	else if (data > root->data) 
+		root->right = Delete(root->right, data);
+	else
+	{
+		if (root->left == NULL)
+		{
+			bstPointer temp = root->right;
+			free(root);
+			return temp;
+		}
+		else if (root->right == NULL)
+		{
+			bstPointer temp = root->left;
+			free(root);
+			return temp;
+		}
+		bstPointer temp = minPointer(root->right);
+		root->data = temp->data;
+		root->right = Delete(root->right, temp->data);
+	}
+	return root;
+}
+void printInorder(bstPointer node)
+{
+	if (node == NULL)
+		return;
+
+	/* first recur on left child */
+	printInorder(node->left);
+
+	/* then print the data of node */
+	printPointer(node);
+
+	/* now recur on right child */
+	printInorder(node->right);
+}
+
+
+int main()
+{
+	int i, j, p;
+	bstPointer root[numRow] = { NULL };
+	for (i = 0; i < numRow; i++)
+	{
+		for (j = 0; j < numCol; j++)
+		{
+			root[i] = insert(root[i], matrix[i][j]);
+		}
+	}
+	int temp;
+	for (temp = numRow, i = 0; temp > 0; i++, temp /= 2) {}
+	int k = pow(2, i);
+
+	int total;
+	//int size;
+
+	bstPointer* tree;
+	bstPointer* winner;
+	int start;
+	int x;
+
+	total = numRow * numCol;
+	
+
+	tree = (bstPointer*)malloc(sizeof(bstPointer) * (2 * k));
+	winner = (bstPointer*)malloc(sizeof(bstPointer) * (k));
+	flushAll(tree, 2 * k);
+	flushAll(winner, k);
+	start = k;
+	for (i = start; i < start + numRow; i++) tree[i] = maxCount(root[i - start]);
+	for (i = 0; i < total; i++)
+	{
+		flushAll(winner, k);
+		start = k;
+		int escape = 0;
+		while (1 && !escape)
+		{
+			if (start == 1)
+			{
+				tree[0] = winner[1];
+				if (winner[1]->count == 0 || winner[1] == NULL)
+				{
+					escape = 1;
+					break;
+				}
+				for (i = k * 2 - 1; i >= k; i--)
+				{
+					if (tree[0]->data == tree[i]->data)
+						break;
+				}
+				int tempRow = i - k;
+				printPointerIndex(tempRow, tree[0]);
+				root[tempRow] = Delete(root[tempRow], maxCount(root[tempRow])->data);
+
+				if (maxCount(root[tempRow]) == NULL)
+				{
+					tree[tempRow + k] = newNullNode();
+				}
+				else
+				{
+					tree[tempRow + k] = maxCount(root[tempRow]);
+				}
+				break;
+			}
+			for (j = start; j < start * 2; j += 2)
+			{
+				if (start == k)
+				{
+					if (tree[j] == NULL)
+					{
+
+						if (tree[j + 1] == NULL)
+						{
+							winner[j / 2] = NULL;
+						}
+						else
+						{
+							winner[j / 2] = tree[j + 1];
+						}
+					}
+					else if (tree[j + 1] == NULL)
+					{
+						winner[j / 2] = tree[j];
+					}
+					else if (compare(tree[j], tree[j + 1]) >= 0)
+					{
+						tree[j / 2] = tree[j + 1];
+						winner[j / 2] = tree[j];
+					}
+					else if (compare(tree[j], tree[j + 1]) < 0)
+					{
+						tree[j / 2] = tree[j];
+						winner[j / 2] = tree[j + 1];
+					}
+
+				}
+				else
+				{
+					if (winner[j] == NULL)
+					{
+						if (winner[j + 1] == NULL)
+						{
+							winner[j / 2] = NULL;
+						}
+						else
+						{
+							winner[j / 2] = winner[j + 1];
+						}
+					}
+					else if (winner[j + 1] == NULL)
+					{
+						winner[j / 2] = winner[j];
+					}
+					else if (compare(winner[j], winner[j + 1]) >= 0)
+					{
+						tree[j / 2] = winner[j + 1];
+						winner[j / 2] = winner[j];
+					}
+					else if (compare(winner[j], winner[j + 1]) < 0)
+					{
+						tree[j / 2] = winner[j];
+						winner[j / 2] = winner[j + 1];
+					}
+				}
+			}
+			start /= 2;
+		}
+	}
+	return 0;
+}
